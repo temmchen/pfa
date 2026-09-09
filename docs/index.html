@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>PFA – Personal Finance Assistant</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234a6cf7'/%3E%3Ctext x='50' y='66' font-size='44' font-family='-apple-system,Helvetica,Arial' font-weight='700' fill='white' text-anchor='middle'%3EPFA%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ================= Anmeldung ================= -->
+<div id="gate" hidden>
+  <div class="gcard">
+    <div class="logo big">PFA</div>
+
+    <form id="gLogin" hidden autocomplete="off">
+      <h2>Personal Finance Assistant</h2>
+      <p class="lead">Finanzen und Honorare – Ende-zu-Ende verschlüsselt.<br>
+        Ohne Passphrase sind weder Beträge noch Namen noch PDFs lesbar.</p>
+      <div class="ghinweis" id="gLoginHinweis" hidden></div>
+      <div class="gfehler" hidden></div>
+      <div class="frow"><label for="lPw">Passphrase</label>
+        <input type="password" id="lPw" name="pw" required autocomplete="current-password"></div>
+      <label class="gcheck"><input type="checkbox" name="merken">
+        <span>Beim Neuladen des Tabs angemeldet bleiben (nur diese Browser-Sitzung)</span></label>
+      <button type="submit" class="pri">Entsperren</button>
+      <div class="glinks">
+        <button type="button" class="glink" data-akt="reset">Passphrase vergessen?</button>
+      </div>
+    </form>
+
+    <form id="gSetup" hidden autocomplete="off">
+      <h2>PFA einrichten</h2>
+      <p class="lead">Lege eine Passphrase fest. Alle Daten – Finanzen wie Honorare – werden damit
+        verschlüsselt im Repository abgelegt; der Quelltext ist öffentlich, deine Zahlen nicht.</p>
+      <div class="gfehler" hidden></div>
+      <div class="frow"><label for="sPw1">Passphrase <small>(mindestens 12 Zeichen)</small></label>
+        <input type="password" id="sPw1" name="pw1" required minlength="12" autocomplete="new-password">
+        <div class="stark"><i></i></div><div class="starktxt"></div></div>
+      <div class="frow"><label for="sPw2">Passphrase wiederholen</label>
+        <input type="password" id="sPw2" name="pw2" required minlength="12" autocomplete="new-password"></div>
+      <div class="frow"><label for="sToken">GitHub-Token <small>(fine-grained, Contents: Read &amp; Write)</small></label>
+        <input type="password" id="sToken" name="token" required placeholder="github_pat_…" autocomplete="off"></div>
+      <div class="radios klein">
+        <label><input type="radio" name="merken" value="geraet" checked><span>Token auf diesem Gerät merken <small>(verschlüsselt, nur mit Passphrase nutzbar)</small></span></label>
+        <label><input type="radio" name="merken" value="sitzung"><span>Nur für diese Browser-Sitzung</span></label>
+        <label><input type="radio" name="merken" value="nein"><span>Nicht merken</span></label>
+      </div>
+      <p class="hint" id="gSetupProgress" hidden></p>
+      <button type="submit" class="pri">Einrichten</button>
+      <p class="hint zentriert">Alternative ohne Token: <code>python3 tools/pfa_einrichten.py</code> im Repository-Ordner.</p>
+    </form>
+
+    <form id="gKey" hidden autocomplete="off">
+      <h2>Wiederherstellungsschlüssel</h2>
+      <p class="lead">Dein einziger Weg zurück, falls du die Passphrase vergisst.
+        Er wird <b>nur jetzt</b> angezeigt – bitte in den Passwort-Manager legen oder ausdrucken.</p>
+      <div class="rkbox" id="rkText"></div>
+      <div class="zweispaltig">
+        <button type="button" class="wide" id="rkCopy">Kopieren</button>
+        <button type="button" class="wide" id="rkSave">Als Datei sichern</button>
+      </div>
+      <label class="gcheck"><input type="checkbox" name="ok" required>
+        <span>Ich habe den Schlüssel gesichert. Ohne Passphrase <b>und</b> ohne diesen Schlüssel kann
+        niemand die Daten wiederherstellen – auch ich nicht.</span></label>
+      <button type="submit" class="pri" id="gKeyWeiter">Weiter zur App</button>
+    </form>
+
+    <form id="gReset" hidden autocomplete="off">
+      <h2>Passphrase vergessen</h2>
+      <p class="lead">Mit dem Wiederherstellungsschlüssel kommst du wieder hinein –
+        alle Daten bleiben erhalten.</p>
+      <div class="gfehler" hidden></div>
+      <div class="frow"><label for="rPw0">Wiederherstellungsschlüssel</label>
+        <input id="rPw0" name="rk" required spellcheck="false" autocomplete="off"
+               placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"></div>
+      <div class="frow"><label for="rPw1">Neue Passphrase <small>(mindestens 12 Zeichen)</small></label>
+        <input type="password" id="rPw1" name="pw1" autocomplete="new-password">
+        <div class="stark"><i></i></div><div class="starktxt"></div></div>
+      <div class="frow"><label for="rPw2">Neue Passphrase wiederholen</label>
+        <input type="password" id="rPw2" name="pw2" autocomplete="new-password"></div>
+      <div class="frow"><label for="rToken">GitHub-Token <small>(zum Speichern der neuen Passphrase)</small></label>
+        <input type="password" id="rToken" name="token" placeholder="github_pat_…" autocomplete="off"></div>
+      <div class="radios klein">
+        <label><input type="radio" name="merken" value="geraet" checked><span>Token auf diesem Gerät merken</span></label>
+        <label><input type="radio" name="merken" value="sitzung"><span>Nur für diese Sitzung</span></label>
+        <label><input type="radio" name="merken" value="nein"><span>Nicht merken</span></label>
+      </div>
+      <button type="submit" class="pri">Neue Passphrase setzen</button>
+      <button type="submit" class="wide" id="gResetNur" style="margin-top:8px">Nur entsperren (ohne Token, Passphrase später ändern)</button>
+      <div class="glinks">
+        <button type="button" class="glink" data-akt="login">Zurück zur Anmeldung</button>
+        <button type="button" class="glink" data-akt="neu">Kein Schlüssel mehr? Alles löschen und neu anfangen</button>
+      </div>
+    </form>
+
+    <form id="gNeu" hidden autocomplete="off">
+      <h2>Neu anfangen</h2>
+      <div class="gfehler" hidden></div>
+      <div class="ghinweis ernst">Ohne Passphrase und ohne Wiederherstellungsschlüssel lassen sich die
+        vorhandenen Daten <b>nicht wiederherstellen</b> – von niemandem. Hier werden der alte Vault
+        und alle verschlüsselten PDFs gelöscht und durch einen leeren Vault mit neuer Passphrase ersetzt.
+        Danach kannst du eine Sicherung über „Import“ zurückholen – sofern sie sich noch öffnen lässt
+        (Klartext-JSON oder Sicherung mit eigener Passphrase).</div>
+      <div class="frow"><label for="nToken">GitHub-Token <small>(Contents: Read &amp; Write)</small></label>
+        <input type="password" id="nToken" name="token" required placeholder="github_pat_…" autocomplete="off"></div>
+      <div class="frow"><label for="nPw1">Neue Passphrase <small>(mindestens 12 Zeichen)</small></label>
+        <input type="password" id="nPw1" name="pw1" required minlength="12" autocomplete="new-password">
+        <div class="stark"><i></i></div><div class="starktxt"></div></div>
+      <div class="frow"><label for="nPw2">Neue Passphrase wiederholen</label>
+        <input type="password" id="nPw2" name="pw2" required minlength="12" autocomplete="new-password"></div>
+      <div class="radios klein">
+        <label><input type="radio" name="merken" value="geraet" checked><span>Token auf diesem Gerät merken</span></label>
+        <label><input type="radio" name="merken" value="nein"><span>Nicht merken</span></label>
+      </div>
+      <div class="frow"><label for="nConfirm">Zur Bestätigung <code>NEU ANFANGEN</code> eintippen</label>
+        <input id="nConfirm" name="confirm" autocomplete="off" spellcheck="false" placeholder="NEU ANFANGEN"></div>
+      <p class="hint" id="gNeuProgress" hidden></p>
+      <button type="submit" class="danger wide">Alles löschen und neu anlegen</button>
+      <div class="glinks">
+        <button type="button" class="glink" data-akt="login">Zurück zur Anmeldung</button>
+      </div>
+    </form>
+
+    <div id="gKaputt" hidden>
+      <h2>Vault nicht lesbar</h2>
+      <p class="lead" id="gKaputtText"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ================= App ================= -->
+<div id="app" hidden>
+
+  <header class="top">
+    <button class="brand" id="navHome" title="Zum Home-Menü">
+      <div class="logo">PFA</div>
+      <div class="brandtext">
+        <h1>Personal Finance Assistant</h1>
+        <p>Finanzen &amp; Honorare</p>
+      </div>
+    </button>
+    <nav class="views">
+      <button id="navFinanz" class="navbtn">💶 Finanzen</button>
+      <button id="navHonorar" class="navbtn">🧾 Honorare</button>
+    </nav>
+    <div class="tools">
+      <button id="btnAdmin" class="admbtn" title="Verwaltung (GitHub-Token) – nötig zum Speichern">
+        <svg class="icn" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L22 14l-8 8-2.7-2.7a4 4 0 0 0-5-5L2 10l8-8z"/></svg>
+        <span id="btnAdminText">Verwaltung</span></button>
+      <button id="btnTheme" class="ghost" title="Hell / Dunkel umschalten">
+        <svg class="icn" id="themeIcon" viewBox="0 0 24 24"></svg></button>
+      <button id="btnLock" class="ghost" title="Sofort sperren (ohne zu speichern)">
+        <svg class="icn" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2.4"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></button>
+      <button id="btnExit" class="pri" title="Offene Änderungen sichern und die App sperren">
+        <svg class="icn" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+        Sichern &amp; beenden</button>
+    </div>
+  </header>
+
+  <div id="adminHinweis" class="hinweisleiste" hidden>
+    <span>👀 <b>Nur Ansicht.</b> Zum Erfassen und Ändern oben <b>Verwaltung</b> aktivieren (GitHub-Token) –
+      das Token kann verschlüsselt auf diesem Gerät gemerkt werden.</span>
+  </div>
+
+  <!-- ---------- Home ---------- -->
+  <section id="viewHome" class="wrap" hidden>
+    <p class="home-datum" id="homeDatum"></p>
+    <h2 class="home-titel">Was möchtest du öffnen?</h2>
+    <div class="tiles">
+      <button class="tile finanz" id="homeFinanz">
+        <div class="tile-icon">💶</div>
+        <div class="tile-name">Finanzen</div>
+        <div class="tile-sub">Privates Budget – Credit / Debit, Kategorien, Monatsverlauf</div>
+        <div class="tile-val num" id="homeFinanzWert">–</div>
+        <div class="tile-text" id="homeFinanzText"></div>
+      </button>
+      <button class="tile honorar" id="homeHonorar">
+        <div class="tile-icon">🧾</div>
+        <div class="tile-name">Honorare</div>
+        <div class="tile-sub">Honorarnoten – Ampel offen / verschickt / bezahlt, Mahnungen, PDFs</div>
+        <div class="tile-val num" id="homeHonorarWert">–</div>
+        <div class="tile-text" id="homeHonorarText"></div>
+      </button>
+    </div>
+    <div class="home-foot">
+      <button id="homeExit" class="pri">
+        <svg class="icn" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+        Sichern &amp; beenden</button>
+      <span class="hint">Automatische Sperre nach 10 Minuten ohne Aktivität.</span>
+    </div>
+  </section>
+
+  <!-- ---------- Finanzen ---------- -->
+  <section id="viewFinanz" class="wrap" hidden>
+    <header class="viewhead">
+      <div>
+        <h2>💶 Finanzen</h2>
+        <p id="subtitle">Bilanzierung — Einnahmen &amp; Ausgaben</p>
+      </div>
+      <div class="tools">
+        <button id="btnImport" title="Daten importieren (Sicherung, JSON oder CSV)">
+          <svg class="icn" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/></svg>Import</button>
+        <button id="btnExport" title="Daten exportieren">
+          <svg class="icn" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 20h16"/></svg>Export</button>
+        <button id="btnFix" title="Fixkosten / Buchungen in einen anderen Monat kopieren">
+          <svg class="icn" viewBox="0 0 24 24"><path d="M17 2H9a2 2 0 0 0-2 2v1"/><rect x="3" y="7" width="14" height="15" rx="2"/><path d="M21 6v11a2 2 0 0 1-2 2"/></svg>Monat kopieren</button>
+        <button id="btnSettings" class="ghost" title="Einstellungen">
+          <svg class="icn" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M19.5 13.6a7.7 7.7 0 0 0 0-3.2l2.1-1.6-2-3.5-2.5 1a7.7 7.7 0 0 0-2.7-1.6L14 2h-4l-.4 2.7a7.7 7.7 0 0 0-2.7 1.6l-2.5-1-2 3.5 2.1 1.6a7.7 7.7 0 0 0 0 3.2L2.4 15.2l2 3.5 2.5-1a7.7 7.7 0 0 0 2.7 1.6L10 22h4l.4-2.7a7.7 7.7 0 0 0 2.7-1.6l2.5 1 2-3.5z"/></svg></button>
+      </div>
+    </header>
+
+    <div id="altFinanzBanner" class="hinweisleiste alt" hidden>
+      <span>📦 In diesem Browser liegen noch Buchungen des früheren <b>Finanz-Dashboards</b>.</span>
+      <button id="altFinanzBtn" class="pri">Jetzt übernehmen</button>
+    </div>
+
+    <section class="kpis">
+      <div class="kpi cr">
+        <div class="lbl">Credit — Einnahmen</div>
+        <div class="val num" id="kCredit">0,00 €</div>
+        <div class="sub" id="kCreditSub">—</div>
+      </div>
+      <div class="kpi db">
+        <div class="lbl">Debit — Ausgaben</div>
+        <div class="val num" id="kDebit">0,00 €</div>
+        <div class="sub" id="kDebitSub">—</div>
+      </div>
+      <div class="kpi sa">
+        <div class="lbl">Saldo — bleibt übrig</div>
+        <div class="val num" id="kSaldo">0,00 €</div>
+        <div class="sub" id="kSaldoSub">—</div>
+        <div class="bar-mini"><i id="kBar" style="width:0%"></i></div>
+      </div>
+      <div class="kpi" id="kpiKonto" hidden>
+        <div class="lbl">Kontostand gesamt</div>
+        <div class="val num" id="kKonto">0,00 €</div>
+        <div class="sub" id="kKontoSub">Startkapital + alle Buchungen</div>
+      </div>
+    </section>
+
+    <section class="filters">
+      <div class="field">
+        <label for="fZeit">Zeitraum</label>
+        <select id="fZeit"><option value="alle">Alle Buchungen</option></select>
+      </div>
+      <div class="field">
+        <label for="fKat">Kategorie</label>
+        <select id="fKat"><option value="">Alle</option></select>
+      </div>
+      <div class="field">
+        <label for="fSort">Sortierung</label>
+        <select id="fSort">
+          <option value="datum-desc">Datum ↓</option>
+          <option value="datum-asc">Datum ↑</option>
+          <option value="betrag-desc">Betrag ↓</option>
+          <option value="betrag-asc">Betrag ↑</option>
+          <option value="label-asc">Label A–Z</option>
+        </select>
+      </div>
+      <div class="search">
+        <svg class="icn" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="fSuche" type="search" placeholder="Suchen in Label, Kategorie, Notiz …">
+      </div>
+      <button id="btnReset" class="ghost" title="Filter zurücksetzen">Zurücksetzen</button>
+    </section>
+
+    <section class="boards">
+      <div class="board credit" id="boardCredit">
+        <h2>
+          <svg class="icn" viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+          Credit — Einnahmen
+          <span class="cnt" id="cntC">0</span>
+          <span class="sum num" id="sumC">0,00 €</span>
+        </h2>
+        <form class="addform" data-typ="credit" autocomplete="off">
+          <input name="label" placeholder="Bezeichnung, z. B. Gehalt" required>
+          <input name="betrag" placeholder="0,00" inputmode="decimal" required>
+          <button type="submit" class="add" title="Hinzufügen (Enter)">
+            <svg class="icn" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="l2">
+            <input name="datum" type="date">
+            <input name="kategorie" placeholder="Kategorie" list="katCredit">
+          </div>
+        </form>
+        <ul class="rows" id="listC"></ul>
+        <div class="foot"><span id="footC">Keine Buchungen</span><span class="num" id="footCavg"></span></div>
+      </div>
+
+      <div class="board debit" id="boardDebit">
+        <h2>
+          <svg class="icn" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>
+          Debit — Ausgaben
+          <span class="cnt" id="cntD">0</span>
+          <span class="sum num" id="sumD">0,00 €</span>
+        </h2>
+        <form class="addform" data-typ="debit" autocomplete="off">
+          <input name="label" placeholder="Bezeichnung, z. B. Miete" required>
+          <input name="betrag" placeholder="0,00" inputmode="decimal" required>
+          <button type="submit" class="add" title="Hinzufügen (Enter)">
+            <svg class="icn" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="l2">
+            <input name="datum" type="date">
+            <input name="kategorie" placeholder="Kategorie" list="katDebit">
+          </div>
+        </form>
+        <ul class="rows" id="listD"></ul>
+        <div class="foot"><span id="footD">Keine Buchungen</span><span class="num" id="footDavg"></span></div>
+      </div>
+    </section>
+
+    <section class="analysis">
+      <div class="panel">
+        <h3>Nach Kategorien <span class="hint" id="katHint"></span></h3>
+        <div class="catsplit">
+          <div><h4>Einnahmen</h4><div id="catC"></div></div>
+          <div><h4>Ausgaben</h4><div id="catD"></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Monatsverlauf <span class="hint">letzte 12 Monate mit Buchungen</span></h3>
+        <div class="chart" id="chart"></div>
+        <div class="legend">
+          <span><i style="background:var(--cr)"></i>Einnahmen</span>
+          <span><i style="background:var(--db)"></i>Ausgaben</span>
+          <span>Saldo je Monat unter der Säule</span>
+        </div>
+      </div>
+    </section>
+
+    <datalist id="katCredit"></datalist>
+    <datalist id="katDebit"></datalist>
+  </section>
+
+  <!-- ---------- Honorare ---------- -->
+  <section id="viewHonorar" class="wrap hon" hidden>
+    <header class="viewhead">
+      <div>
+        <h2>🧾 Honorare</h2>
+        <p>Rechnungen &amp; Zahlungsstatus</p>
+      </div>
+      <div class="tools">
+        <button id="exportBtn" title="Exportieren: Excel, PDF, Sicherung, JSON, CSV">⬇️ Export</button>
+        <button id="importBtn" title="Daten aus einer Datei einlesen">⬆️ Import</button>
+      </div>
+    </header>
+
+    <div id="adminBar" class="admin-bar" hidden>
+      <span class="admin-badge">Bearbeiten</span>
+      <div class="admin-bar-actions">
+        <button id="newInvoiceBtn" class="btn primary">＋ Neue Rechnung</button>
+        <button id="adminSettingsBtn" class="btn ghost">⚙️ Debitoren</button>
+        <button id="resetBtn" class="btn ghost danger">🗑️ Zurücksetzen</button>
+      </div>
+    </div>
+
+    <div id="importBanner" class="import-banner" hidden>
+      <span id="importBannerText"></span>
+      <button id="importDiscardBtn" class="btn ghost">Verwerfen</button>
+    </div>
+
+    <section class="summary" id="summaryCards"></section>
+
+    <section class="controls">
+      <input type="search" id="searchInput" placeholder="Suche: Nummer, Name, Debitor …">
+      <select id="debtorFilter" title="Nach Debitor filtern"></select>
+      <select id="yearFilter" title="Nach Jahr filtern"></select>
+    </section>
+
+    <section id="invoiceList" class="invoice-list"></section>
+    <p id="emptyHint" class="empty-hint" hidden>Keine Rechnungen für diese Auswahl.</p>
+
+    <footer class="footer">
+      <span id="footerStats"></span>
+    </footer>
+  </section>
+</div>
+
+<!-- ================= Dialoge Finanzen ================= -->
+<div class="ovl" id="ovlImport" hidden>
+  <div class="modal">
+    <header><h3>Buchungen importieren</h3><button class="ghost" data-ovl>✕</button></header>
+    <div class="body">
+      <p>Verschlüsselte Sicherung (PFA oder altes Finanz-Dashboard), JSON oder CSV (auch Bank-Export).</p>
+      <div class="drop" id="drop">
+        <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/></svg>
+        <div><b>Datei wählen</b> oder hierher ziehen</div>
+        <div style="font-size:12px;margin-top:4px">.json · .csv · .txt</div>
+      </div>
+      <input type="file" id="file" accept=".json,.csv,.txt,application/json,text/csv" hidden>
+      <div class="radios">
+        <label><input type="radio" name="imode" value="merge" checked>
+          <span><b>Hinzufügen</b><small>Bestehende Buchungen bleiben erhalten, Duplikate werden übersprungen.</small></span></label>
+        <label><input type="radio" name="imode" value="replace">
+          <span><b>Ersetzen</b><small>Alle vorhandenen Buchungen werden durch die Datei ersetzt.</small></span></label>
+      </div>
+      <div id="impPw" hidden style="margin-top:16px">
+        <div class="ghinweis" id="impPwText"><b>Verschlüsselte Sicherung erkannt.</b>
+          Bitte die Passphrase eingeben, mit der diese Datei gespeichert wurde.</div>
+        <div class="frow"><label for="impPwFeld">Passphrase der Datei</label>
+          <input type="password" id="impPwFeld" autocomplete="current-password"></div>
+        <button class="pri" id="impPwGo" style="width:100%;justify-content:center">Entschlüsseln und übernehmen</button>
+      </div>
+      <div class="note" style="margin-top:15px">
+        <b>CSV-Format:</b> Kopfzeile mit <code>typ;label;betrag;datum;kategorie;notiz</code> —
+        Trennzeichen <code>;</code>, <code>,</code> oder Tab. Ohne Spalte <code>typ</code> gilt:
+        positiver Betrag = Credit, negativer = Debit.
+      </div>
+    </div>
+    <footer><button data-ovl>Abbrechen</button></footer>
+  </div>
+</div>
+
+<div class="ovl" id="ovlAlt" hidden>
+  <div class="modal">
+    <header><h3>Altes Finanz-Dashboard übernehmen</h3><button class="ghost" data-ovl>✕</button></header>
+    <div class="body">
+      <p>In diesem Browser liegen noch die verschlüsselten Buchungen des früheren Finanz-Dashboards.
+        Mit dem <b>alten Passwort</b> (oder dem alten Wiederherstellungsschlüssel) werden sie hier übernommen.</p>
+      <div class="gfehler" id="altFehler" hidden></div>
+      <div class="frow"><label for="altPw">Altes Passwort</label>
+        <input type="password" id="altPw" autocomplete="current-password"></div>
+      <div class="radios">
+        <label><input type="radio" name="altmode" value="merge" checked>
+          <span><b>Hinzufügen</b><small>Duplikate werden übersprungen.</small></span></label>
+        <label><input type="radio" name="altmode" value="replace">
+          <span><b>Ersetzen</b><small>Vorhandene Buchungen in PFA werden ersetzt (auch Titel, Währung, Startkapital).</small></span></label>
+      </div>
+      <label class="gcheck"><input type="checkbox" id="altLoeschen" checked>
+        <span>Alten Bestand danach aus dem Browser entfernen</span></label>
+    </div>
+    <footer><button data-ovl>Abbrechen</button><button class="pri" id="altGo">Übernehmen</button></footer>
+  </div>
+</div>
+
+<div class="ovl" id="ovlExport" hidden>
+  <div class="modal">
+    <header><h3>Buchungen exportieren</h3><button class="ghost" data-ovl>✕</button></header>
+    <div class="body">
+      <p>Der Export enthält <b id="expInfo">alle</b> Buchungen.</p>
+      <div class="radios">
+        <label><input type="radio" name="escope" value="alle" checked>
+          <span><b>Alle Buchungen</b><small>Vollständige Sicherung, unabhängig vom Filter.</small></span></label>
+        <label><input type="radio" name="escope" value="filter">
+          <span><b>Nur aktuelle Ansicht</b><small>Genau das, was gerade gefiltert angezeigt wird.</small></span></label>
+      </div>
+      <div style="display:flex;gap:9px;margin-top:16px;flex-wrap:wrap">
+        <button class="pri" id="expJson">
+          <svg class="icn" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>JSON speichern</button>
+        <button id="expCsv">
+          <svg class="icn" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>CSV speichern</button>
+        <button id="expClip">In Zwischenablage</button>
+      </div>
+      <button id="expTresor" style="margin-top:9px;width:100%;justify-content:center">
+        <svg class="icn" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2.4"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        Verschlüsselte Sicherung speichern (empfohlen)</button>
+      <label class="gcheck"><input type="checkbox" id="expEigene">
+        <span>Eigene Passphrase für diese Sicherung <small>– sonst öffnet sie sich mit der PFA-Passphrase oder dem Wiederherstellungsschlüssel</small></span></label>
+      <input type="password" id="expEigenePass" hidden placeholder="Passphrase für diese Sicherungsdatei (min. 12 Zeichen)" autocomplete="new-password">
+      <button id="expWieder" class="pri" style="margin-top:10px;width:100%;justify-content:center" hidden></button>
+      <div class="note" id="expWohin" style="margin-top:15px"></div>
+      <div class="note" style="margin-top:10px">
+        Die <b>verschlüsselte Sicherung</b> darf überall liegen — OneDrive, USB-Stick, E-Mail an dich selbst.
+        <b>JSON</b> und <b>CSV</b> sind dagegen <b>Klartext</b>: praktisch für Excel, aber für niemanden sonst bestimmt.
+      </div>
+    </div>
+    <footer><button data-ovl>Schließen</button></footer>
+  </div>
+</div>
+
+<div class="ovl" id="ovlFix" hidden>
+  <div class="modal">
+    <header><h3>Buchungen in einen Monat kopieren</h3><button class="ghost" data-ovl>✕</button></header>
+    <div class="body">
+      <p>Praktisch für wiederkehrende Posten: Miete, Gehalt, Versicherungen …</p>
+      <div class="frow frow2">
+        <div><label for="fixVon">Von Monat</label><input type="month" id="fixVon"></div>
+        <div><label for="fixNach">Nach Monat</label><input type="month" id="fixNach"></div>
+      </div>
+      <div class="radios">
+        <label><input type="radio" name="fixmode" value="fix" checked>
+          <span><b>Nur Fixposten</b><small>Buchungen, die mit dem 🔁-Symbol als wiederkehrend markiert sind.</small></span></label>
+        <label><input type="radio" name="fixmode" value="alle">
+          <span><b>Alle Buchungen des Monats</b><small>Kompletter Monat wird dupliziert.</small></span></label>
+      </div>
+      <div id="fixPreview" class="note" style="margin-top:15px"></div>
+    </div>
+    <footer><button data-ovl>Abbrechen</button><button class="pri" id="fixGo">Kopieren</button></footer>
+  </div>
+</div>
+
+<div class="ovl" id="ovlSet" hidden>
+  <div class="modal">
+    <header><h3>Einstellungen Finanzen</h3><button class="ghost" data-ovl>✕</button></header>
+    <div class="body">
+      <div class="frow"><label for="setTitel">Untertitel</label>
+        <input id="setTitel" placeholder="Bilanzierung — Einnahmen &amp; Ausgaben"></div>
+      <div class="frow frow2">
+        <div><label for="setWaehrung">Währung</label>
+          <select id="setWaehrung">
+            <option value="EUR">Euro (€)</option><option value="CHF">Schweizer Franken (CHF)</option>
+            <option value="USD">US-Dollar ($)</option><option value="GBP">Pfund (£)</option>
+          </select></div>
+        <div><label for="setStart">Startkapital</label>
+          <input id="setStart" inputmode="decimal" placeholder="0,00"></div>
+      </div>
+      <div class="note">
+        Alle Buchungen liegen <b>verschlüsselt</b> (AES-256-GCM) im Repository – lesbar nur mit deiner
+        Passphrase. Für eine Sicherung außerhalb von GitHub regelmäßig
+        <b>Export → Verschlüsselte Sicherung</b> nutzen.
+      </div>
+      <div style="display:flex;gap:9px;margin-top:16px;flex-wrap:wrap">
+        <button id="setDemo">Beispieldaten laden</button>
+        <button id="setClear" class="danger">Alle Buchungen löschen</button>
+      </div>
+    </div>
+    <footer><button data-ovl>Schließen</button><button class="pri" id="setSave">Speichern</button></footer>
+  </div>
+</div>
+
+<!-- ================= Dialoge Honorare ================= -->
+<dialog id="pdfDialog" class="pdf-dialog">
+  <div class="dialog-head">
+    <strong id="pdfTitle"></strong>
+    <div>
+      <a id="pdfNewTab" class="btn ghost" target="_blank" rel="noopener">↗️ Neuer Tab</a>
+      <a id="pdfDownload" class="btn ghost" download>⬇️ Herunterladen</a>
+      <button class="btn ghost" data-close="pdfDialog">✕ Schließen</button>
+    </div>
+  </div>
+  <iframe id="pdfFrame" title="Rechnung (PDF)"></iframe>
+</dialog>
+
+<dialog id="invoiceDialog">
+  <form id="invoiceForm" method="dialog" class="form">
+    <h2 id="invoiceFormTitle">Neue Rechnung</h2>
+    <div class="grid2">
+      <label>Rechnungsnummer
+        <input type="text" name="number" required placeholder="z. B. 2026-0044349-01">
+      </label>
+      <label>Betrag (€)
+        <input type="number" name="amount" required step="0.01" min="0" placeholder="0,00">
+      </label>
+    </div>
+    <label>Bezeichnung
+      <input type="text" name="name" required placeholder="z. B. Honorarnote – Wasserschaden Musterstraße">
+    </label>
+    <div class="grid2">
+      <label>Debitor (wer zahlt)
+        <select name="debtor" id="debtorSelect"></select>
+      </label>
+      <label id="newDebtorWrap" hidden>Neuer Debitor
+        <input type="text" name="newDebtor" placeholder="Name des Debitors">
+      </label>
+      <label>Status
+        <select name="status">
+          <option value="offen">🔴 Offen – nicht bezahlt</option>
+          <option value="verschickt">🟡 Verschickt – wartet auf Zahlung</option>
+          <option value="bezahlt">🟢 Bezahlt</option>
+        </select>
+      </label>
+    </div>
+    <div class="grid2">
+      <label>Rechnungsdatum
+        <input type="date" name="date">
+      </label>
+      <label>Fällig bis
+        <input type="date" name="dueDate">
+      </label>
+    </div>
+    <fieldset class="pdf-source">
+      <legend>Rechnung (PDF)</legend>
+      <label class="radio"><input type="radio" name="pdfSource" value="keep" id="pdfKeepRadio" checked>
+        <span id="pdfKeepLabel">Ohne PDF</span></label>
+      <label class="radio"><input type="radio" name="pdfSource" value="vault">
+        <span>PDF hochladen (verschlüsselt im Vault gespeichert)</span></label>
+      <input type="file" name="pdfFile" accept="application/pdf" hidden>
+      <label class="radio"><input type="radio" name="pdfSource" value="link">
+        <span>Externer Link (z. B. OneDrive-Freigabe)</span></label>
+      <input type="url" name="pdfUrl" placeholder="https://1drv.ms/…" hidden>
+      <label class="radio" id="pdfRemoveWrap" hidden><input type="radio" name="pdfSource" value="none">
+        <span>PDF / Link von dieser Rechnung entfernen</span></label>
+    </fieldset>
+    <label>Notiz (optional)
+      <input type="text" name="notes" placeholder="z. B. Mahnung am … verschickt">
+    </label>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close="invoiceDialog">Abbrechen</button>
+      <button type="submit" class="btn primary" id="invoiceSaveBtn">Speichern</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="settingsDialog">
+  <form id="settingsForm" method="dialog" class="form">
+    <h2>Debitoren</h2>
+    <p class="hint" id="debtorListe"></p>
+    <label>Debitor hinzufügen
+      <input type="text" name="addDebtor" placeholder="z. B. Foyer, Baloise …">
+    </label>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close="settingsDialog">Abbrechen</button>
+      <button type="submit" class="btn primary">Übernehmen</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="exportDialog">
+  <form id="exportForm" method="dialog" class="form">
+    <h2>Honorare exportieren</h2>
+    <fieldset class="pdf-source">
+      <legend>Umfang</legend>
+      <label class="radio"><input type="radio" name="scope" value="alle" checked>
+        <span id="scopeAllLabel">Alle Rechnungen</span></label>
+      <label class="radio"><input type="radio" name="scope" value="filter">
+        <span id="scopeFilterLabel">Nur die aktuelle Auswahl</span></label>
+    </fieldset>
+    <div class="export-grid">
+      <button type="button" class="btn primary" id="expXlsx">📊 Excel (.xlsx)</button>
+      <button type="button" class="btn" id="expPdf">🖨️ PDF-Bericht</button>
+      <button type="button" class="btn" id="expEnc">🔐 Verschlüsselte Sicherung</button>
+      <button type="button" class="btn ghost" id="hExpJson">JSON (Klartext)</button>
+      <button type="button" class="btn ghost" id="hExpCsv">CSV (Klartext)</button>
+    </div>
+    <label class="radio"><input type="checkbox" id="expOwnPass">
+      <span>Eigene Passphrase für diese Sicherung
+        <small>– sonst öffnet sie sich mit der PFA-Passphrase oder dem Wiederherstellungsschlüssel</small></span></label>
+    <input type="password" id="expPassField" hidden placeholder="Passphrase für diese Sicherungsdatei (min. 12 Zeichen)"
+           autocomplete="new-password">
+    <label class="radio" id="expPdfsWrap"><input type="checkbox" id="expWithPdfs" checked>
+      <span>Rechnungs-PDFs in die verschlüsselte Sicherung aufnehmen
+        <small>(vollständiger Rückhalt – die Datei wird dadurch größer)</small></span></label>
+    <p class="hint" id="exportHint"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close="exportDialog">Schließen</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="importDialog">
+  <form id="importForm" method="dialog" class="form">
+    <h2>Honorare importieren</h2>
+    <div id="importDrop" class="drop">
+      <strong>Datei wählen</strong> oder hierher ziehen<br>
+      <small>.json (PFA-Sicherung oder Klartext) · .enc (alte Honorar-Sicherung) · .csv</small>
+    </div>
+    <input type="file" id="importFile" accept=".enc,.json,.csv,.txt" hidden>
+    <label class="radio" id="importPassWrap" hidden>Passphrase dieser Sicherungsdatei
+      <input type="password" id="importPass" autocomplete="off" placeholder="Passphrase der Datei">
+    </label>
+    <fieldset class="pdf-source">
+      <legend>Vorgehen</legend>
+      <label class="radio"><input type="radio" name="imode" value="merge" checked>
+        <span>Hinzufügen <small>– vorhandene Rechnungen bleiben, gleiche Rechnungsnummern werden übersprungen</small></span></label>
+      <label class="radio"><input type="radio" name="imode" value="replace">
+        <span>Ersetzen <small>– die gesamte Kartei wird durch die Datei ersetzt</small></span></label>
+    </fieldset>
+    <p id="importAdminHint" class="warnbox" hidden>
+      <b>Verwaltung ist nicht aktiv.</b> Der Import füllt dann nur die Ansicht und wird
+      <b>nicht gespeichert</b> – nach dem nächsten Laden ist er wieder weg. Zum dauerhaften
+      Übernehmen bitte oben <b>Verwaltung</b> aktivieren.</p>
+    <p id="importInfo" class="hint" hidden></p>
+    <p id="importError" class="lock-error" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close="importDialog">Abbrechen</button>
+      <button type="button" class="btn primary" id="importApplyBtn" disabled>Übernehmen</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="resetDialog">
+  <form id="resetForm" method="dialog" class="form">
+    <h2>Honorare zurücksetzen</h2>
+    <p class="hint">Löscht Rechnungen endgültig aus dem Vault. Die Git-Historie behält
+      ältere Stände – ein Rückgriff ist also möglich, aber umständlich.
+      <b>Vorher am besten eine verschlüsselte Sicherung exportieren.</b></p>
+    <fieldset class="pdf-source">
+      <legend>Umfang</legend>
+      <label class="radio"><input type="radio" name="rscope" value="alle" checked>
+        <span>Alles löschen <small>– sämtliche Rechnungen, unabhängig vom Jahr</small></span></label>
+      <label class="radio"><input type="radio" name="rscope" value="jahr">
+        <span>Nur ein Jahr löschen</span></label>
+      <select id="resetYear"></select>
+    </fieldset>
+    <label class="radio"><input type="checkbox" id="resetPdfs" checked>
+      <span>Zugehörige Rechnungs-PDFs im Vault mitlöschen</span></label>
+    <label class="radio" id="resetDebtorsWrap"><input type="checkbox" id="resetDebtors">
+      <span>Debitorenliste ebenfalls auf „LaLux“ zurücksetzen</span></label>
+    <p id="resetPreview" class="warnbox"></p>
+    <label><span>Zur Bestätigung <code>LÖSCHEN</code> eintippen</span>
+      <input type="text" id="resetConfirm" autocomplete="off" spellcheck="false" placeholder="LÖSCHEN">
+    </label>
+    <p id="resetHint" class="hint"></p>
+    <p id="resetError" class="lock-error" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close="resetDialog">Abbrechen</button>
+      <button type="button" class="btn danger wartet" id="resetGoBtn">Endgültig löschen</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ================= Gemeinsame Dialoge ================= -->
+<dialog id="adminDialog">
+  <div id="adminAktiv" class="form" hidden>
+    <h2>Verwaltung aktiv</h2>
+    <p class="hint" id="adminBranchInfo"></p>
+    <p class="hint">Änderungen in Finanzen und Honoraren werden verschlüsselt im Repository gespeichert.</p>
+    <div class="dialog-actions links">
+      <button type="button" class="btn" id="adminPassBtn">🔑 Passphrase &amp; Zugang</button>
+      <button type="button" class="btn ghost" id="adminForgetBtn">Token vergessen</button>
+      <button type="button" class="btn ghost" id="adminOffBtn">Verwaltung beenden</button>
+      <button type="button" class="btn ghost" data-close="adminDialog">Schließen</button>
+    </div>
+  </div>
+  <form id="adminForm" method="dialog" class="form">
+    <h2>Verwaltung aktivieren</h2>
+    <p class="hint">Zum Speichern wird ein GitHub-Token benötigt: Fine-grained PAT, nur dieses Repository
+      (<b>temmchen/pfa</b>), Berechtigung „<b>Contents: Read and write</b>“. Das Schreibrecht wird beim
+      Aktivieren geprüft, ohne etwas zu schreiben.</p>
+    <label>GitHub-Token
+      <input type="password" name="token" required placeholder="github_pat_…" autocomplete="off">
+    </label>
+    <div class="radios klein">
+      <label><input type="radio" name="merken" value="geraet" checked><span>Auf diesem Gerät merken <small>(mit dem Datenschlüssel verschlüsselt – ohne Passphrase wertlos)</small></span></label>
+      <label><input type="radio" name="merken" value="sitzung"><span>Nur für diese Browser-Sitzung</span></label>
+      <label><input type="radio" name="merken" value="nein"><span>Nicht merken</span></label>
+    </div>
+    <p id="adminError" class="lock-error" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close="adminDialog">Abbrechen</button>
+      <button type="submit" class="btn primary">Aktivieren</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="passDialog">
+  <div class="form">
+    <h2>Passphrase &amp; Zugang</h2>
+    <form id="fPwChange" autocomplete="off" class="form">
+      <div class="gfehler" hidden></div>
+      <label>Aktuelle Passphrase
+        <input type="password" id="pwAlt" name="alt" required autocomplete="current-password"></label>
+      <div class="grid2">
+        <label>Neue Passphrase <small>(min. 12 Zeichen)</small>
+          <input type="password" id="pwNeu1" name="neu1" required minlength="12" autocomplete="new-password">
+          <div class="stark"><i></i></div><div class="starktxt"></div></label>
+        <label>Wiederholen
+          <input type="password" id="pwNeu2" name="neu2" required minlength="12" autocomplete="new-password"></label>
+      </div>
+      <p class="hint">Nur der Schlüsselbund wird neu geschrieben – die Daten selbst bleiben unverändert.
+        Der Wiederherstellungsschlüssel gilt weiterhin.</p>
+      <button type="submit" class="btn primary">Passphrase ändern</button>
+    </form>
+    <hr>
+    <form id="fRkNeu" autocomplete="off" class="form">
+      <p class="hint">Wiederherstellungsschlüssel verloren oder schon benutzt? Hier lässt sich ein neuer
+        erzeugen – der bisherige wird damit ungültig.</p>
+      <div class="gfehler" hidden></div>
+      <label>Aktuelle Passphrase
+        <input type="password" id="rkPw" name="pw" required autocomplete="current-password"></label>
+      <button type="submit" class="btn">Neuen Wiederherstellungsschlüssel erzeugen</button>
+      <div class="rkbox" id="rkNeuBox" hidden></div>
+    </form>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close="passDialog">Schließen</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="printReport"></div>
+<div id="toasts"></div>
+<div id="busyOverlay" class="busy-overlay" hidden>
+  <div class="busy-box"><div class="spinner"></div><span id="busyText">Bitte warten …</span></div>
+</div>
+
+<script src="crypto.js"></script>
+<script src="core.js"></script>
+<script src="finanz.js"></script>
+<script src="honorar.js"></script>
+<script src="honorar-export.js"></script>
+</body>
+</html>
