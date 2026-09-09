@@ -1,9 +1,12 @@
 #!/bin/sh
-# Testlauf: docs/ in einen Arbeitsordner kopieren (ohne Vault-Inhalt) und den Mock-Server starten.
-# Der Arbeitsordner liegt ausserhalb von ~/Documents, weil der Sandbox-Server dort nicht lesen darf.
+# Lokaler Testlauf: docs/ (ohne Vault-Inhalt) in einen Arbeitsordner spiegeln, Testdaten
+# erzeugen und den Mock-Server starten. Danach im Browser oeffnen:
+#   http://localhost:8765/?api=http://localhost:8765     (Schreib-Token im Mock: test-token-rw)
+# Der Arbeitsordner liegt bewusst ausserhalb von ~/Documents (Sandbox-Prozesse duerfen dort nicht lesen).
 set -e
 HIER=$(cd "$(dirname "$0")/.." && pwd)
-RUN=${PFA_RUN_DIR:-/private/tmp/claude-501/-Users-tbr-Documents/8dd202c9-0480-463e-a33d-f80812362b8a/scratchpad/pfa_run}
+RUN=${PFA_RUN_DIR:-${TMPDIR:-/tmp}/pfa_run}
 mkdir -p "$RUN/docs/vault/pdf"
 rsync -a --delete --exclude vault "$HIER/docs/" "$RUN/docs/"
+python3 "$HIER/test/make_fixtures.py" "$RUN" >/dev/null
 exec python3 "$HIER/test/mock_github.py" --docs "$RUN/docs" --port "${PFA_PORT:-8765}"
