@@ -1,0 +1,20 @@
+{
+  "format": "pfa-keyring",
+  "version": 1,
+  "erstellt": "2026-09-09T13:21:35Z",
+  "geaendert": null,
+  "huellen": {
+    "pw": {
+      "salt": "JElO0ptpaHsNd6DqRsm1Yw==",
+      "iv": "S987kmuD1BMHj1sE",
+      "paket": "sWv9+VucV4PM4Tt7nsGEQYPGHP6TYkcBdKaYp86URbiRNEfhEGH8JRN2SF0Z5SP1",
+      "runden": 600000
+    },
+    "wk": {
+      "salt": "959esbFpybugj7ltz3oLZA==",
+      "iv": "ZU4AlYgpHHYHpcYp",
+      "paket": "LNOusq/2mElzGt8S4fbCxo+dLw92cPniPPx2E3rePtaBbgbD1NiGcrXTgwY5H8aV",
+      "runden": 600000
+    }
+  }
+}
