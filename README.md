@@ -164,3 +164,8 @@ Danach `git add docs/vault && git commit && git push`. Passphrase über
 | `docs/honorar.js`, `docs/honorar-export.js` | Bereich Honorare + Excel/PDF/Sicherung |
 | `tools/pfa_vault.py`, `tools/pfa_einrichten.py` | Kommandozeile bzw. Einrichtung per macOS-Dialog |
 | `test/mock_github.py` | lokaler Testserver mit nachgebauter GitHub-Contents-API (`?api=http://localhost:8765`) |
+
+GitHub Pages liefert alle Dateien mit `Cache-Control: max-age=600`. Damit ein
+Browser nie die neue `index.html` mit alten Skripten kombiniert, tragen die
+`<script>`- und `<link>`-Tags eine Versionskennung (`?v=…`). **Nach jeder
+Änderung an JS oder CSS die Kennung in `docs/index.html` hochzählen.**
