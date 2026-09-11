@@ -88,7 +88,8 @@ const Reports = (() => {
   /** Holt ein Vault-PDF entschluesselt ueber den Kern (API im Verwaltungsmodus, sonst Seite). */
   const pdfBytes = (inv) => Pfa.pdfLesen(inv.pdf.file);
 
-  async function exportSicherung(umfang, mitPdfs, eigenePass) {
+  /** Baut das (noch unverschluesselte) Honorar-Sicherungspaket, optional inkl. Vault-PDFs. */
+  async function sicherungPaket(umfang, mitPdfs) {
     const liste = auswahl(umfang);
     const paket = {
       format: "honorar-sicherung",
@@ -113,6 +114,11 @@ const Reports = (() => {
       }
       if (fehlend.length) paket.pdfsFehlend = fehlend;
     }
+    return paket;
+  }
+
+  async function exportSicherung(umfang, mitPdfs, eigenePass) {
+    const paket = await sicherungPaket(umfang, mitPdfs);
     busy("Sicherung wird verschlüsselt …");
     /* Ohne eigene Passphrase traegt die Datei die Huellen des Schluesselbunds und
        oeffnet sich mit Passphrase oder Wiederherstellungsschluessel; mit eigener
@@ -123,7 +129,7 @@ const Reports = (() => {
     );
     const fehlt = paket.pdfsFehlend ? ` ${paket.pdfsFehlend.length} PDF(s) waren nicht erreichbar.` : "";
     const schutz = eigenePass ? " Geschützt mit der eigenen Passphrase – bitte getrennt aufbewahren!" : " Öffnet sich mit der PFA-Passphrase oder dem Wiederherstellungsschlüssel.";
-    return name && `${liste.length} Rechnungen${mitPdfs ? ` und ${Object.keys(paket.pdfs).length} PDFs` : ""} gesichert als „${name}“.${fehlt}${schutz}`;
+    return name && `${paket.invoices.length} Rechnungen${mitPdfs ? ` und ${Object.keys(paket.pdfs).length} PDFs` : ""} gesichert als „${name}“.${fehlt}${schutz}`;
   }
 
   /* ================= JSON / CSV ================= */
@@ -657,7 +663,7 @@ const Reports = (() => {
   }
 
   return {
-    exportExcel, exportCsv, exportJson, exportSicherung, alsPdf,
+    exportExcel, exportCsv, exportJson, exportSicherung, sicherungPaket, alsPdf,
     lesen, anwenden, auswahl, auswahlText, berichtLeeren, speichern,
     get pickerNutzbar() { return pickerNutzbar; },
   };

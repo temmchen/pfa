@@ -92,7 +92,14 @@ Verwaltung schreibt direkt auf `main`.
   Rechnung umstellen; Mahnstufen 1 → 2 → 3 per Klick (Klick auf die höchste
   Stufe entfernt sie); Ampel-Karten, Debitor- und Jahresfilter; Zurücksetzen
   (alles oder ein Jahr, Tippbestätigung `LÖSCHEN`).
-- **Sichern & beenden**: wartet auf ausstehende Speicherungen und sperrt.
+- **Sichern & beenden**: wartet auf ausstehende Speicherungen, bietet dann eine
+  **Gesamtsicherung beider Bereiche** (Finanzen + Honorare inkl. Rechnungs-PDFs)
+  als eine `.json`-Datei an und sperrt danach. Wo möglich (z. B. Chrome) öffnet
+  sich ein „Speichern unter“-Fenster zur freien Ortswahl; wo nicht (Safari)
+  landet die Datei im Download-Ordner. Die Datei (`modul: "alle"`) spielt beim
+  Import beide Bereiche wieder ein – im Bereich Finanzen die Buchungen, im
+  Bereich Honorare die Rechnungen samt PDFs. Über „Ohne Sicherung beenden“ lässt
+  sich nur sperren.
 - **Passphrase & Zugang** (Verwaltung → 🔑): Passphrase ändern, neuen
   Wiederherstellungsschlüssel erzeugen.
 

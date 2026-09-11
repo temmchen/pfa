@@ -997,6 +997,9 @@ const Finanz = (() => {
       if (sichtbar()) render();
     },
     daten() { return data; },
+    sicherungTeil() {
+      return { titel: data.titel, waehrung: data.waehrung, startkapital: data.startkapital, eintraege: data.eintraege.slice() };
+    },
     render,
     flush,
     lock() { clearTimeout(speicherTimer); ausstehend = false; data = leer(); leeren(); },

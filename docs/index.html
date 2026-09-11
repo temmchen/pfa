@@ -7,7 +7,7 @@
 <meta name="referrer" content="no-referrer">
 <title>PFA – Personal Finance Assistant</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234a6cf7'/%3E%3Ctext x='50' y='66' font-size='44' font-family='-apple-system,Helvetica,Arial' font-weight='700' fill='white' text-anchor='middle'%3EPFA%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="styles.css?v=20260911b">
+<link rel="stylesheet" href="styles.css?v=20260911c">
 </head>
 <body>
 
@@ -625,6 +625,22 @@
   </form>
 </dialog>
 
+<dialog id="exitDialog">
+  <div class="form">
+    <h2>Sichern &amp; beenden</h2>
+    <p class="hint">Deine Änderungen sind im Vault gespeichert. Zusätzlich kannst du jetzt eine
+      <b>vollständige Sicherung beider Bereiche</b> (Finanzen und Honorare, inklusive Rechnungs-PDFs)
+      als eine Datei ablegen – so hast du überall, auch am Arbeitslaptop, verlässlich die aktuelle Kopie.
+      Dieselbe Datei spielt beim Import beide Bereiche wieder ein.</p>
+    <p class="hint" id="exitWohin"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close="exitDialog">Abbrechen</button>
+      <button type="button" class="btn ghost" id="exitNoSaveBtn">Ohne Sicherung beenden</button>
+      <button type="button" class="btn primary" id="exitSaveBtn">Sicherung speichern &amp; beenden</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="exportDialog">
   <form id="exportForm" method="dialog" class="form">
     <h2>Honorare exportieren</h2>
@@ -793,10 +809,10 @@
   <div class="busy-box"><div class="spinner"></div><span id="busyText">Bitte warten …</span></div>
 </div>
 
-<script src="crypto.js?v=20260911b"></script>
-<script src="core.js?v=20260911b"></script>
-<script src="finanz.js?v=20260911b"></script>
-<script src="honorar.js?v=20260911b"></script>
-<script src="honorar-export.js?v=20260911b"></script>
+<script src="crypto.js?v=20260911c"></script>
+<script src="core.js?v=20260911c"></script>
+<script src="finanz.js?v=20260911c"></script>
+<script src="honorar.js?v=20260911c"></script>
+<script src="honorar-export.js?v=20260911c"></script>
 </body>
 </html>

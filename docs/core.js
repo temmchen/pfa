@@ -516,17 +516,75 @@ const Pfa = (() => {
   ["pointerdown", "keydown", "scroll", "touchstart"].forEach((ev) =>
     document.addEventListener(ev, () => { if (state.dek) armAutoLock(); }, { passive: true }));
 
+  /* Vollstaendige Sicherung beider Bereiche: jedes Modul liefert ueber sicherungTeil()
+   * seinen Teil (Finanzen: titel/waehrung/startkapital/eintraege; Honorare: debtors/invoices/pdfs).
+   * Die Schluessel sind ueberschneidungsfrei, also ergibt die Vereinigung eine Nutzlast, die
+   * beide Importer (modul === "alle") jeweils fuer ihren Teil verstehen -- ohne Aenderung dort. */
+  async function gesamtNutzlast() {
+    const teil = { version: 1, bereich: "alle", erstellt: jetzt() };
+    for (const name of REIHENFOLGE) {
+      const m = module[name];
+      if (m && m.sicherungTeil) Object.assign(teil, await m.sicherungTeil());
+    }
+    return teil;
+  }
+
+  /* Datei anbieten: wenn moeglich mit "Speichern unter"-Fenster (Ort frei waehlbar),
+   * sonst klassischer Download in den Browser-Download-Ordner. */
+  async function dateiAnbieten(name, text, mime, beschreibung, endung) {
+    if (typeof window.showSaveFilePicker === "function") {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: name,
+          types: [{ description: beschreibung, accept: { [mime]: [endung] } }],
+        });
+        const w = await handle.createWritable();
+        await w.write(new Blob([text], { type: mime + ";charset=utf-8" }));
+        await w.close();
+        return { ok: true, name: handle.name, viaPicker: true };
+      } catch (err) {
+        if (err && err.name === "AbortError") return { abgebrochen: true };
+        // sonst (Picker blockiert/nicht nutzbar): auf Download ausweichen
+      }
+    }
+    const blob = new Blob([text], { type: mime + ";charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    return { ok: true, name, viaPicker: false };
+  }
+
+  let exitBackup = null; // vorbereitete Gesamtsicherung {text, name}
+
   async function sichernUndBeenden() {
     if (!state.dek) return;
     busy("Wird gesichert …");
     try {
       for (const m of Object.values(module)) if (m.flush) await m.flush();
-      lock("Gesichert und gesperrt. Bis zum nächsten Mal!");
     } catch (e) {
+      busy(false);
       toast(`Sichern fehlgeschlagen: ${e.message} – nicht gesperrt, damit nichts verloren geht.`, "err", 8000);
+      return;
+    }
+    // Gesamtsicherung (beide Bereiche) aus dem Arbeitsspeicher aufbauen; PDFs kommen aus dem Vault.
+    try {
+      busy("Gesamtsicherung wird vorbereitet …");
+      const nutzlast = await gesamtNutzlast();
+      exitBackup = { text: await sicherungBauen("alle", nutzlast), name: `pfa-sicherung-${jetzt().slice(0, 10)}.json` };
+    } catch (e) {
+      exitBackup = null;
+      toast(`Gesamtsicherung konnte nicht erstellt werden: ${e.message}. Die Daten sind im Vault gespeichert.`, "err", 9000);
     } finally {
       busy(false);
     }
+    const kannPicker = typeof window.showSaveFilePicker === "function";
+    $("exitWohin").innerHTML = kannPicker
+      ? "Es öffnet sich ein Fenster, in dem du <b>Ordner und Namen frei wählst</b> – lege die Datei z. B. in OneDrive oder Dokumente ab, dann erreichst du sie auch am Arbeitslaptop."
+      : "Dieser Browser (z. B. Safari) fragt nicht nach dem Ort, sondern legt die Datei sofort im <b>Download-Ordner</b> ab (auf dem Mac meist <code>~/Downloads</code>). Von dort verschiebst du sie an den gewünschten Ort.";
+    $("exitSaveBtn").disabled = !exitBackup;
+    $("exitDialog").showModal();
   }
 
   /* ================= Einrichtung / Wiederherstellung / Neuanfang ================= */
@@ -974,6 +1032,26 @@ const Pfa = (() => {
     $("btnLock").onclick = () => lock();
     $("btnExit").onclick = sichernUndBeenden;
     $("homeExit").onclick = sichernUndBeenden;
+    $("exitSaveBtn").onclick = async () => {
+      if (!exitBackup) return;
+      const b = $("exitSaveBtn"); b.disabled = true;
+      try {
+        const r = await dateiAnbieten(exitBackup.name, exitBackup.text, "application/json", "PFA-Gesamtsicherung", ".json");
+        if (r.abgebrochen) { b.disabled = false; return; } // im Dialog bleiben, erneut versuchbar
+        $("exitDialog").close();
+        exitBackup = null;
+        lock(r.viaPicker
+          ? `Gesichert als „${r.name}“ und gesperrt.`
+          : `Gesamtsicherung „${r.name}“ liegt im Download-Ordner. Gesperrt.`);
+      } catch (e) {
+        b.disabled = false;
+        toast(`Speichern fehlgeschlagen: ${e.message}`, "err", 7000);
+      }
+    };
+    $("exitNoSaveBtn").onclick = () => {
+      $("exitDialog").close(); exitBackup = null;
+      lock("Gesperrt – ohne zusätzliche Sicherungsdatei.");
+    };
 
     // ---- Verwaltung (Token) ----
     $("btnAdmin").onclick = () => {

@@ -608,6 +608,12 @@ const Honorar = (() => {
       if (sichtbar()) render();
     },
     daten() { return state.data; },
+    async sicherungTeil() {
+      const p = await Reports.sicherungPaket("alle", true);
+      const teil = { debtors: p.debtors, invoices: p.invoices, pdfs: p.pdfs };
+      if (p.pdfsFehlend) teil.pdfsFehlend = p.pdfsFehlend;
+      return teil;
+    },
     render,
     flush() { return Promise.resolve(); },
     lock() {
