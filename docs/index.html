@@ -215,7 +215,10 @@
 
     <div id="altFinanzBanner" class="hinweisleiste alt" hidden>
       <span>📦 In diesem Browser liegen noch Buchungen des früheren <b>Finanz-Dashboards</b>.</span>
-      <button id="altFinanzBtn" class="pri">Jetzt übernehmen</button>
+      <span class="aktionen">
+        <button id="altFinanzVerwerfenBtn" title="Alten Bestand aus diesem Browser entfernen – der Hinweis verschwindet">Jetzt verwerfen</button>
+        <button id="altFinanzBtn" class="pri" title="Buchungen mit dem alten Passwort in PFA übernehmen">Jetzt übernehmen</button>
+      </span>
     </div>
 
     <section class="kpis">
@@ -430,9 +433,23 @@
           <span><b>Ersetzen</b><small>Vorhandene Buchungen in PFA werden ersetzt (auch Titel, Währung, Startkapital).</small></span></label>
       </div>
       <label class="gcheck"><input type="checkbox" id="altLoeschen" checked>
-        <span>Alten Bestand danach aus dem Browser entfernen</span></label>
+        <span>Alten Bestand danach aus dem Browser entfernen. Ohne Häkchen bleibt er für das alte Dashboard erhalten;
+          der Hinweis erscheint erst wieder, wenn sich dort etwas ändert.</span></label>
     </div>
     <footer><button data-ovl>Abbrechen</button><button class="pri" id="altGo">Übernehmen</button></footer>
+  </div>
+</div>
+
+<div class="ovl" id="ovlAltVerwerfen" hidden>
+  <div class="modal">
+    <header><h3>Alten Bestand verwerfen</h3><button class="ghost" data-ovl>✕</button></header>
+    <div class="body">
+      <p>Die verschlüsselten Buchungen des früheren Finanz-Dashboards werden aus <b>diesem Browser</b> entfernt.
+        Der Hinweis verschwindet damit; das alte Dashboard findet danach keine Daten mehr.</p>
+      <p>Werden die Buchungen noch gebraucht: zuerst <b>Jetzt übernehmen</b> wählen oder im alten Dashboard
+        eine Sicherung exportieren. Direkt nach dem Verwerfen lässt sich der Schritt noch rückgängig machen.</p>
+    </div>
+    <footer><button data-ovl>Abbrechen</button><button class="danger" id="altVerwerfenGo">Verwerfen</button></footer>
   </div>
 </div>
 

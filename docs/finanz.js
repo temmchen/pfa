@@ -150,6 +150,9 @@ const Finanz = (() => {
   const summe = (list) => list.reduce((s, e) => s + e.betrag, 0);
 
   /* ---------- Rendern ---------- */
+  /* Hinweis auf den Altbestand des frueheren Finanz-Dashboards – nur solange er weder uebernommen noch verworfen ist. */
+  function altBanner() { $("altFinanzBanner").hidden = !Pfa.altFinanzOffen(); }
+
   function render() {
     $("subtitle").textContent = data.titel;
     const nurAnsicht = !Pfa.adminAktiv;
@@ -157,7 +160,7 @@ const Finanz = (() => {
     for (const el of document.querySelectorAll("#viewFinanz form.addform input, #viewFinanz form.addform button")) {
       el.disabled = nurAnsicht;
     }
-    $("altFinanzBanner").hidden = !Pfa.altFinanzTresor();
+    altBanner();
 
     const list = gefiltert();
     const cs = list.filter((e) => e.typ === "credit");
@@ -885,8 +888,9 @@ const Finanz = (() => {
   };
   $("altPw").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("altGo").click(); } });
   $("altGo").onclick = async () => {
+    if (!darf()) return;
     const o = Pfa.altFinanzTresor();
-    if (!o) { $("ovlAlt").hidden = true; render(); return; }
+    if (!o) { $("ovlAlt").hidden = true; altBanner(); return; }
     const b = $("altGo");
     b.disabled = true;
     try {
@@ -895,13 +899,23 @@ const Finanz = (() => {
       catch (e) { $("altFehler").textContent = "Das alte Passwort passt nicht."; $("altFehler").hidden = false; return; }
       const eintraege = (Array.isArray(roh.eintraege) ? roh.eintraege : []).map(normEintrag).filter(Boolean);
       const modus = document.querySelector("input[name=altmode]:checked").value;
-      if ($("altLoeschen").checked) Pfa.altFinanzEntfernen();
-      if (!eintraege.length) {
-        toast("Im alten Bestand stehen keine Buchungen.", "err");
-        $("ovlAlt").hidden = true; render(); return;
-      }
+      // Der Hinweis ist damit in jedem Fall erledigt: Altbestand entfernen oder als uebernommen merken.
+      if ($("altLoeschen").checked) Pfa.altFinanzEntfernen(); else Pfa.altFinanzErledigt(o);
+      $("ovlAlt").hidden = true;
+      if (!eintraege.length) { toast("Im alten Bestand stehen keine Buchungen.", "err"); altBanner(); return; }
       uebernehmen(eintraege, roh, modus);
+      altBanner();
     } finally { b.disabled = false; }
+  };
+
+  /* Verwerfen: Altbestand aus dem Browser entfernen (mit Rueckfrage und Rueckgaengig), Hinweis verschwindet. */
+  $("altFinanzVerwerfenBtn").onclick = () => oeffne("ovlAltVerwerfen");
+  $("altVerwerfenGo").onclick = () => {
+    const roh = Pfa.altFinanzEntfernen();
+    $("ovlAltVerwerfen").hidden = true;
+    altBanner();
+    toast("Alter Bestand des Finanz-Dashboards aus diesem Browser entfernt.", "",
+      { text: "Rückgängig", fn: () => { Pfa.altFinanzWiederherstellen(roh); altBanner(); } });
   };
 
   /* ---------- Monat kopieren ---------- */

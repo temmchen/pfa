@@ -40,6 +40,7 @@ const Pfa = (() => {
   const SS_DEK = "pfa-sitzung";           // roher DEK fuer "angemeldet bleiben" (nur diese Browser-Sitzung)
   const LS_LOCKOUT = "pfa-lockout";
   const ALT_FINANZ = "finanz-dashboard-v1"; // Altbestand des frueheren Finanz-Dashboards (gleicher Origin)
+  const LS_ALT_ERLEDIGT = "pfa-alt-finanz-erledigt"; // Fingerabdruck des Altbestands, der schon uebernommen wurde
   const MIN_PASS = 12;
 
   const state = {
@@ -636,7 +637,30 @@ const Pfa = (() => {
       return istAltFinanzTresor(o) ? o : null;
     } catch { return null; }
   }
-  function altFinanzEntfernen() { try { localStorage.removeItem(ALT_FINANZ); } catch { /* egal */ } }
+  /* Fingerabdruck: jede Speicherung im alten Dashboard setzt "geaendert" neu und verschluesselt mit frischem IV. */
+  const altFinanzFingerabdruck = (o) => String((o && o.geaendert) || (o && o.daten && o.daten.iv) || "?");
+  /** Altbestand, der weder uebernommen noch verworfen wurde – steuert den Hinweis im Bereich Finanzen. */
+  function altFinanzOffen() {
+    const o = altFinanzTresor();
+    if (!o) return null;
+    try { if (localStorage.getItem(LS_ALT_ERLEDIGT) === altFinanzFingerabdruck(o)) return null; } catch { /* egal */ }
+    return o;
+  }
+  /** Altbestand als uebernommen merken, ohne ihn zu entfernen (Hinweis erst wieder, wenn er sich aendert). */
+  function altFinanzErledigt(o) {
+    try { localStorage.setItem(LS_ALT_ERLEDIGT, altFinanzFingerabdruck(o || altFinanzTresor())); } catch { /* egal */ }
+  }
+  /** Altbestand aus dem Browser entfernen; liefert den rohen Inhalt fuer "Rueckgaengig". */
+  function altFinanzEntfernen() {
+    let roh = null;
+    try {
+      roh = localStorage.getItem(ALT_FINANZ);
+      localStorage.removeItem(ALT_FINANZ);
+      localStorage.removeItem(LS_ALT_ERLEDIGT);
+    } catch { /* egal */ }
+    return roh;
+  }
+  function altFinanzWiederherstellen(roh) { if (roh) { try { localStorage.setItem(ALT_FINANZ, roh); } catch { /* egal */ } } }
 
   /* ================= Navigation ================= */
 
@@ -1063,7 +1087,7 @@ const Pfa = (() => {
     dateiLesen, speichern, pdfLesen, pdfSchreiben, pdfLoeschen, pdfPfad,
     requireAdmin, go, renderAktuell, armAutoLock, lock,
     sicherungBauen, sicherungOeffnen, istSicherung, istAltFinanzTresor,
-    altFinanzTresor, altFinanzEntfernen,
+    altFinanzTresor, altFinanzOffen, altFinanzErledigt, altFinanzEntfernen, altFinanzWiederherstellen,
     get dek() { return state.dek; },
     get adminAktiv() { return state.admin.active; },
     blobUrl(blob) { const u = URL.createObjectURL(blob); state.blobUrls.push(u); return u; },

@@ -126,9 +126,14 @@ Auf dem Sperrbildschirm **„Passphrase vergessen?“**:
 ## Umzug von den alten Dashboards
 
 - **Finanz-Dashboard** (Buchungen lagen nur im Browser): PFA erkennt den alten
-  Bestand im selben Browser automatisch („Jetzt übernehmen“ im Bereich
-  Finanzen, altes Passwort eingeben). Alternativ im alten Dashboard *Export →
-  Verschlüsselte Sicherung* speichern und in PFA importieren.
+  Bestand im selben Browser automatisch und zeigt im Bereich Finanzen einen
+  Hinweis mit zwei Wegen: **„Jetzt übernehmen“** (altes Passwort eingeben,
+  Hinzufügen oder Ersetzen) oder **„Jetzt verwerfen“** (Bestand nach Rückfrage
+  aus dem Browser entfernen, kurz danach noch rückgängig machbar). Nach beidem
+  verschwindet der Hinweis. Wer beim Übernehmen den Bestand im Browser belässt,
+  sieht den Hinweis erst wieder, wenn sich im alten Dashboard etwas ändert.
+  Alternativ im alten Dashboard *Export → Verschlüsselte Sicherung* speichern
+  und in PFA importieren.
 - **Honorar-Übersicht:** eine alte verschlüsselte Sicherung (`.enc`) oder ein
   JSON-Export lässt sich im Bereich Honorare importieren; oder die Rechnungen
   gleich bei der Einrichtung mitgeben (`--honorare`).
